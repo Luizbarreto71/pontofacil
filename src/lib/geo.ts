@@ -50,7 +50,7 @@ function formatPhoton(p: PhotonProps): string {
 export async function reverseGeocode(c: Coords): Promise<string> {
   try {
     const res = await fetch(
-      `https://photon.komoot.io/reverse?lon=${c.lng}&lat=${c.lat}&lang=pt`
+      `https://photon.komoot.io/reverse?lon=${c.lng}&lat=${c.lat}&lang=default`
     );
     if (!res.ok) throw new Error("geocode");
     const data = await res.json();
@@ -70,7 +70,7 @@ export interface GeocodeResult extends Coords {
 export async function geocodeAddress(query: string): Promise<GeocodeResult | null> {
   try {
     const res = await fetch(
-      `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=1&lang=pt`
+      `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=1&lang=default`
     );
     if (!res.ok) throw new Error("geocode");
     const data = await res.json();
