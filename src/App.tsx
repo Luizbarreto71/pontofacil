@@ -20,7 +20,7 @@ import { EmployeesView } from "./features/admin/EmployeesView";
 import { CompanyConfigView } from "./features/admin/CompanyConfigView";
 import { NotificationsView } from "./features/admin/NotificationsView";
 import { ReportsView } from "./features/admin/ReportsView";
-import { PlaceholderView } from "./features/admin/PlaceholderView";
+import { RegistrosView } from "./features/admin/RegistrosView";
 
 function RequireAuth({ children, adminOnly }: { children: React.ReactNode; adminOnly?: boolean }) {
   const { isAuthenticated, user, loading } = useAuth();
@@ -61,7 +61,7 @@ export default function App() {
           <Route path="notificacoes" element={<NotificationsView />} />
           <Route path="configuracoes" element={<CompanyConfigView />} />
           <Route path="relatorios" element={<ReportsView />} />
-          <Route path="registros" element={<PlaceholderView title="Registros" />} />
+          <Route path="registros" element={<RegistrosView />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
