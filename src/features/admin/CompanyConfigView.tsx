@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { MapPin, Search, Loader2, Check, Save } from "lucide-react";
+import { MapPin, Search, Loader2, Check, Save, LocateFixed } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useToast } from "@/components/ui/toast";
 import { companyService } from "@/lib/supabase/companyService";
-import { geocodeAddress } from "@/lib/geo";
+import { geocodeAddress, reverseGeocode } from "@/lib/geo";
 
 export function CompanyConfigView() {
   const { user } = useAuth();
@@ -20,7 +20,41 @@ export function CompanyConfigView() {
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [radius, setRadius] = useState(150);
   const [searching, setSearching] = useState(false);
+  const [locating, setLocating] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  const useCurrentLocation = () => {
+    if (!("geolocation" in navigator)) {
+      toast({ variant: "error", title: "GPS indisponível neste dispositivo" });
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const c = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setCoords(c);
+        setAddress(await reverseGeocode(c));
+        setLocating(false);
+        toast({
+          variant: "success",
+          title: "Localização capturada",
+          description: `Precisão de ${Math.round(pos.coords.accuracy)} m`,
+        });
+      },
+      (err) => {
+        setLocating(false);
+        toast({
+          variant: "error",
+          title: "Não foi possível obter a localização",
+          description:
+            err.code === err.PERMISSION_DENIED
+              ? "Permita o acesso à localização."
+              : "Ative o GPS e tente novamente (ideal pelo celular).",
+        });
+      },
+      { enableHighAccuracy: true, timeout: 15000 }
+    );
+  };
 
   useEffect(() => {
     if (!empresaId) return;
@@ -97,6 +131,16 @@ export function CompanyConfigView() {
               Buscar
             </Button>
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mt-2 text-primary"
+            onClick={useCurrentLocation}
+            disabled={locating}
+          >
+            {locating ? <Loader2 className="size-4 animate-spin" /> : <LocateFixed className="size-4" />}
+            Usar minha localização atual
+          </Button>
         </div>
 
         <div className="mt-4">
