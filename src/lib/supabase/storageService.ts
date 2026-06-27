@@ -23,6 +23,32 @@ export function captureFrame(video: HTMLVideoElement, mirror = true): Promise<Bl
   return new Promise((resolve) => canvas.toBlob((b) => resolve(b), "image/jpeg", 0.85));
 }
 
+/** Converte uma imagem (File) em JPEG quadrado (recorte central) para o avatar. */
+export function fileToSquareBlob(file: File, size = 320): Promise<Blob | null> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return resolve(null);
+      const side = Math.min(img.width, img.height);
+      const sx = (img.width - side) / 2;
+      const sy = (img.height - side) / 2;
+      ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
+      canvas.toBlob((b) => resolve(b), "image/jpeg", 0.85);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(null);
+    };
+    img.src = url;
+  });
+}
+
 export const storageService = {
   /** Sobe a selfie do funcionário no bucket público `avatars` e devolve a URL. */
   async uploadAvatar(uid: string, blob: Blob): Promise<string | null> {

@@ -8,7 +8,6 @@ import {
   HelpCircle,
   LogOut,
   ChevronRight,
-  ShieldCheck,
   LayoutDashboard,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -27,14 +26,42 @@ import { Page } from "@/components/layout/Page";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/toast";
 import { reportService, formatSaldo } from "@/lib/supabase/reportService";
+import { authService } from "@/lib/supabase/authService";
+import { storageService, fileToSquareBlob } from "@/lib/supabase/storageService";
 import { formatHoursLabel, initials } from "@/lib/utils";
-import { useEffect } from "react";
-import { Hourglass, TrendingUp, TrendingDown } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { Hourglass, TrendingUp, TrendingDown, Camera, Loader2 } from "lucide-react";
 
 export function ProfileScreen() {
   const navigate = useNavigate();
-  const { user, logout, updatePassword } = useAuth();
+  const { user, logout, updatePassword, refreshUser } = useAuth();
   const { toast } = useToast();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  const onPickPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // permite escolher a mesma foto de novo
+    if (!file || !user?.id) return;
+    if (!file.type.startsWith("image/")) {
+      toast({ variant: "warning", title: "Selecione uma imagem" });
+      return;
+    }
+    setUploadingPhoto(true);
+    try {
+      const blob = await fileToSquareBlob(file);
+      if (!blob) throw new Error("Falha ao processar a imagem");
+      const url = await storageService.uploadAvatar(user.id, blob);
+      if (!url) throw new Error("Falha no upload");
+      await authService.updateAvatar(user.id, url);
+      await refreshUser();
+      toast({ variant: "success", title: "Foto atualizada" });
+    } catch (err) {
+      toast({ variant: "error", title: "Não foi possível atualizar a foto", description: err instanceof Error ? err.message : "" });
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
   const [pwOpen, setPwOpen] = useState(false);
   const [pw, setPw] = useState("");
   const [pw2, setPw2] = useState("");
@@ -98,9 +125,22 @@ export function ProfileScreen() {
             <AvatarImage src={user?.avatarUrl} />
             <AvatarFallback className="text-2xl">{initials(user?.name ?? "")}</AvatarFallback>
           </Avatar>
-          <span className="absolute bottom-1 right-1 flex size-7 items-center justify-center rounded-full border-2 border-card bg-success">
-            <ShieldCheck className="size-4 text-white" />
-          </span>
+          {/* botão de trocar foto (galeria/câmera) */}
+          <button
+            onClick={() => fileRef.current?.click()}
+            disabled={uploadingPhoto}
+            className="absolute -bottom-1 -right-1 flex size-8 items-center justify-center rounded-full border-2 border-card bg-primary text-white shadow-float transition active:scale-95"
+            aria-label="Trocar foto"
+          >
+            {uploadingPhoto ? <Loader2 className="size-4 animate-spin" /> : <Camera className="size-4" />}
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={onPickPhoto}
+          />
         </div>
         <h2 className="mt-4 text-xl font-bold">{user?.name}</h2>
         <p className="text-[15px] text-muted-foreground">{user?.role}</p>

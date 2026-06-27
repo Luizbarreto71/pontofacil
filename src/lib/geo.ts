@@ -37,8 +37,9 @@ function formatPhoton(p: PhotonProps): string {
   const street = p.street
     ? `${p.street}${p.housenumber ? `, ${p.housenumber}` : ""}`
     : p.name;
-  const city = p.city ?? p.locality ?? p.district ?? "";
-  return [street, city, p.state].filter(Boolean).join(" — ");
+  const bairro = p.district ?? p.locality ?? "";
+  const city = p.city ?? "";
+  return [street, bairro, city, p.state].filter(Boolean).join(", ");
 }
 
 /**
@@ -46,17 +47,26 @@ function formatPhoton(p: PhotonProps): string {
  * (O Nominatim não envia headers CORS e é bloqueado no navegador.)
  */
 
-/** Reverse geocoding: coordenadas → endereço legível. */
+/**
+ * Reverse geocoding: coordenadas → endereço de RUA legível.
+ * Busca vários candidatos e prioriza um com rua/número (evita devolver o nome
+ * de um POI aleatório próximo).
+ */
 export async function reverseGeocode(c: Coords): Promise<string> {
   try {
     const res = await fetch(
-      `https://photon.komoot.io/reverse?lon=${c.lng}&lat=${c.lat}&lang=default`
+      `https://photon.komoot.io/reverse?lon=${c.lng}&lat=${c.lat}&limit=8&lang=default`
     );
     if (!res.ok) throw new Error("geocode");
     const data = await res.json();
-    const f = data.features?.[0];
-    if (!f) throw new Error("empty");
-    return formatPhoton(f.properties) || `${c.lat.toFixed(5)}, ${c.lng.toFixed(5)}`;
+    const feats: Array<{ properties: PhotonProps & { osm_key?: string } }> = data.features ?? [];
+    if (!feats.length) throw new Error("empty");
+
+    // 1º: feature com rua + número · 2º: feature com rua · 3º: primeira
+    const withNumber = feats.find((f) => f.properties.street && f.properties.housenumber);
+    const withStreet = feats.find((f) => f.properties.street);
+    const best = withNumber ?? withStreet ?? feats[0];
+    return formatPhoton(best.properties) || `${c.lat.toFixed(5)}, ${c.lng.toFixed(5)}`;
   } catch {
     return `${c.lat.toFixed(5)}, ${c.lng.toFixed(5)}`;
   }
