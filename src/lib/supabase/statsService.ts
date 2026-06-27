@@ -5,7 +5,15 @@ import type { PunchType } from "@/types";
 
 type RegistroRow = Database["public"]["Tables"]["registros_ponto"]["Row"];
 
-const LATE_AFTER = "08:10"; // entrada após este horário = atrasado
+const LATE_TOLERANCE_MIN = 5; // minutos de tolerância sobre o horário de entrada
+
+function addMinutes(hhmm: string, mins: number): string {
+  const [h, m] = hhmm.split(":").map(Number);
+  const total = h * 60 + m + mins;
+  const hh = Math.floor(total / 60) % 24;
+  const mm = total % 60;
+  return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+}
 
 export interface TodayStats {
   total: number;
@@ -47,13 +55,22 @@ export const statsService = {
     if (!supabase)
       return { total: totalFuncionarios, presentes: 0, atrasados: 0, ausentes: totalFuncionarios, horasHojeMin: 0 };
 
-    const { data } = await supabase
-      .from("registros_ponto")
-      .select("*")
-      .eq("empresa_id", empresaId)
-      .gte("registrado_em", dayStart(0).toISOString());
+    const [{ data }, { data: us }] = await Promise.all([
+      supabase
+        .from("registros_ponto")
+        .select("*")
+        .eq("empresa_id", empresaId)
+        .gte("registrado_em", dayStart(0).toISOString()),
+      supabase.from("usuarios").select("id, hora_entrada").eq("empresa_id", empresaId),
+    ]);
 
     const rows = (data ?? []) as RegistroRow[];
+    const schedule = new Map<string, string>(
+      ((us ?? []) as { id: string; hora_entrada: string | null }[]).map((u) => [
+        u.id,
+        u.hora_entrada ?? "08:00",
+      ])
+    );
     const grouped = groupByUserDay(rows);
 
     const presentesSet = new Set<string>();
@@ -63,7 +80,9 @@ export const statsService = {
       const userId = key.split("|")[0];
       if (times.entrada) {
         presentesSet.add(userId);
-        if (times.entrada > LATE_AFTER) atrasados++;
+        // atrasado = entrou após o horário previsto + tolerância
+        const limite = addMinutes(schedule.get(userId) ?? "08:00", LATE_TOLERANCE_MIN);
+        if (times.entrada > limite) atrasados++;
       }
       horas += workedMinutes(times);
     }

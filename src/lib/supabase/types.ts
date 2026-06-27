@@ -42,6 +42,8 @@ export interface Database {
           role: "admin" | "gestor" | "rh" | "supervisor" | "funcionario";
           avatar_url: string | null;
           ativo: boolean;
+          hora_entrada: string;
+          hora_saida: string;
           created_at: string;
         };
         Insert: {
@@ -53,6 +55,8 @@ export interface Database {
           role?: "admin" | "gestor" | "rh" | "supervisor" | "funcionario";
           avatar_url?: string | null;
           ativo?: boolean;
+          hora_entrada?: string;
+          hora_saida?: string;
         };
         Update: Partial<Database["public"]["Tables"]["usuarios"]["Insert"]>;
       };

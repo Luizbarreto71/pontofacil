@@ -13,6 +13,8 @@ export interface EmployeeInput {
   cargo: string;
   senha: string;
   empresaId: string;
+  horaEntrada: string; // "08:00"
+  horaSaida: string; // "18:00"
 }
 
 export interface EmployeeRow extends UsuarioRow {
@@ -96,6 +98,8 @@ export const employeeService = {
       email: input.email,
       cargo: input.cargo,
       role: "funcionario",
+      hora_entrada: input.horaEntrada,
+      hora_saida: input.horaSaida,
     });
     await temp.auth.signOut();
 
@@ -110,6 +114,8 @@ export const employeeService = {
       role: "funcionario",
       avatar_url: null,
       ativo: true,
+      hora_entrada: input.horaEntrada,
+      hora_saida: input.horaSaida,
       created_at: new Date().toISOString(),
       faceEnrolled: false,
       lastPunch: null,

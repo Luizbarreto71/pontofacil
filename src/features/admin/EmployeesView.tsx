@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  UserPlus, Search, ScanFace, Trash2, Copy, Check, Mail, KeyRound, Loader2,
+  UserPlus, Search, ScanFace, Trash2, Copy, Check, Mail, KeyRound, Loader2, Clock,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -34,7 +34,14 @@ export function EmployeesView() {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
 
-  const [form, setForm] = useState({ nome: "", email: "", cargo: "", senha: "" });
+  const [form, setForm] = useState({
+    nome: "",
+    email: "",
+    cargo: "",
+    senha: "",
+    horaEntrada: "08:00",
+    horaSaida: "18:00",
+  });
   const [saving, setSaving] = useState(false);
   const [created, setCreated] = useState<{ email: string; senha: string } | null>(null);
   const [copied, setCopied] = useState(false);
@@ -48,7 +55,7 @@ export function EmployeesView() {
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [empresaId]);
 
   const openNew = () => {
-    setForm({ nome: "", email: "", cargo: "", senha: genPassword() });
+    setForm({ nome: "", email: "", cargo: "", senha: genPassword(), horaEntrada: "08:00", horaSaida: "18:00" });
     setCreated(null);
     setOpen(true);
   };
@@ -57,6 +64,10 @@ export function EmployeesView() {
     if (!empresaId) return;
     if (!form.nome || !form.email || form.senha.length < 6) {
       toast({ variant: "warning", title: "Preencha nome, e-mail e senha (mín. 6)" });
+      return;
+    }
+    if (form.horaSaida <= form.horaEntrada) {
+      toast({ variant: "warning", title: "Horário inválido", description: "A saída deve ser após a entrada." });
       return;
     }
     setSaving(true);
@@ -139,6 +150,9 @@ export function EmployeesView() {
                   <p className="truncate text-[12px] text-muted-foreground">
                     {e.cargo || "—"} · {e.email}
                   </p>
+                  <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                    <Clock className="size-3" /> {e.hora_entrada ?? "08:00"}–{e.hora_saida ?? "18:00"}
+                  </p>
                 </div>
                 {e.faceEnrolled ? (
                   <Badge variant="success"><ScanFace className="size-3.5" /> Facial OK</Badge>
@@ -201,6 +215,16 @@ export function EmployeesView() {
               <div className="space-y-1.5">
                 <Label>Senha temporária</Label>
                 <Input value={form.senha} onChange={(e) => setForm({ ...form, senha: e.target.value })} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="flex items-center gap-1.5"><Clock className="size-3.5" /> Entrada</Label>
+                  <Input type="time" value={form.horaEntrada} onChange={(e) => setForm({ ...form, horaEntrada: e.target.value })} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="flex items-center gap-1.5"><Clock className="size-3.5" /> Saída</Label>
+                  <Input type="time" value={form.horaSaida} onChange={(e) => setForm({ ...form, horaSaida: e.target.value })} />
+                </div>
               </div>
               <Button className="w-full" onClick={submit} disabled={saving}>
                 {saving ? <><Loader2 className="size-4 animate-spin" /> Criando…</> : <><UserPlus className="size-[18px]" /> Criar acesso</>}
