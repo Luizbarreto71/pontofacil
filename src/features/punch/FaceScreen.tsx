@@ -23,7 +23,7 @@ import { punchMeta } from "@/lib/punch-meta";
 import { sleep } from "@/lib/utils";
 import { reverseGeocode } from "@/lib/geo";
 import { notificationsService } from "@/lib/supabase/notificationsService";
-import { loadModels, getDescriptor, compare } from "@/lib/face/faceService";
+import { loadModels, getDescriptor, compare, detectForLiveness } from "@/lib/face/faceService";
 import { faceStore } from "@/lib/face/faceStore";
 import type { LivePunch } from "@/types";
 
@@ -142,10 +142,55 @@ export function FaceScreen() {
         await new Promise((r) => video.addEventListener("loadeddata", r, { once: true }));
       }
 
+      // ===== Prova de vida (liveness) por piscada =====
+      // Uma foto não pisca → impede fraude com imagem estática.
       setStatusMsg("Detectando rosto…");
-      // tenta capturar um descritor (algumas tentativas)
       let captured: Float32Array | null = null;
       let score = 0;
+      let faceSeen = false;
+
+      if (settings.liveness !== false) {
+        const baseline: number[] = [];
+        let eyesClosed = false;
+        let blinks = 0;
+        const deadline = Date.now() + 9000;
+
+        while (Date.now() < deadline && blinks < 1) {
+          const r = await detectForLiveness(video);
+          if (!r) {
+            await sleep(120);
+            continue;
+          }
+          faceSeen = true;
+          // calibra o "olho aberto" com as primeiras leituras
+          if (baseline.length < 6) {
+            baseline.push(r.ear);
+            setStatusMsg("Pisque os olhos para confirmar 👁️");
+            await sleep(90);
+            continue;
+          }
+          const open = baseline.reduce((a, b) => a + b, 0) / baseline.length;
+          if (r.ear < open * 0.72) eyesClosed = true;
+          else if (eyesClosed && r.ear > open * 0.9) {
+            blinks++;
+            eyesClosed = false;
+          }
+          await sleep(70);
+        }
+
+        if (blinks < 1) {
+          setChecks((c) => ({ ...c, face: "fail" }));
+          setStatusMsg(
+            faceSeen
+              ? "Prova de vida falhou — pisque os olhos e tente de novo."
+              : "Nenhum rosto detectado. Aproxime-se e melhore a luz."
+          );
+          return;
+        }
+        setStatusMsg("Tudo certo! Capturando…");
+      }
+
+      // captura o descritor (após a prova de vida)
       for (let i = 0; i < 20 && !captured; i++) {
         const r = await getDescriptor(video);
         if (r) {

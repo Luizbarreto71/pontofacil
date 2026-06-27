@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/brand/Logo";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/toast";
-import { loadModels, getDescriptor } from "@/lib/face/faceService";
+import { loadModels, getDescriptor, detectForLiveness } from "@/lib/face/faceService";
 import { faceStore } from "@/lib/face/faceStore";
 import { captureFrame, storageService } from "@/lib/supabase/storageService";
 import { authService } from "@/lib/supabase/authService";
@@ -59,11 +59,35 @@ export function EnrollFaceScreen() {
     setPhase("capturing");
     setMsg("Detectando rosto…");
 
+    // prova de vida (piscar) antes de cadastrar — impede cadastrar uma foto
+    setMsg("Pisque os olhos para confirmar 👁️");
+    const baseline: number[] = [];
+    let eyesClosed = false;
+    let blinks = 0;
+    let faceSeen = false;
+    const deadline = Date.now() + 9000;
+    while (Date.now() < deadline && blinks < 1) {
+      const r = await detectForLiveness(video);
+      if (!r) { await sleep(120); continue; }
+      faceSeen = true;
+      if (baseline.length < 6) { baseline.push(r.ear); await sleep(90); continue; }
+      const open = baseline.reduce((a, b) => a + b, 0) / baseline.length;
+      if (r.ear < open * 0.72) eyesClosed = true;
+      else if (eyesClosed && r.ear > open * 0.9) { blinks++; eyesClosed = false; }
+      await sleep(70);
+    }
+    if (blinks < 1) {
+      setPhase("ready");
+      setMsg(faceSeen ? "Prova de vida falhou — pisque e tente de novo." : "Nenhum rosto detectado. Melhore a luz.");
+      return;
+    }
+
+    setMsg("Capturando…");
     let descriptor: Float32Array | null = null;
     for (let i = 0; i < 14 && !descriptor; i++) {
       const r = await getDescriptor(video);
       if (r) descriptor = r.descriptor;
-      else await sleep(300);
+      else await sleep(150);
     }
     if (!descriptor) {
       setPhase("ready");

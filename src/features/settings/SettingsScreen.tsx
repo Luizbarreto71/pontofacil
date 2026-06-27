@@ -5,6 +5,7 @@ import {
   Moon,
   Languages,
   ScanFace,
+  Eye,
   Fingerprint,
   Hourglass,
 } from "lucide-react";
@@ -38,6 +39,7 @@ export function SettingsScreen() {
   const toggles: { key: keyof AppSettings; icon: React.ReactNode; label: string; desc: string }[] = [
     { key: "darkMode", icon: <Moon className="size-5" />, label: "Modo escuro", desc: "Tema escuro do aplicativo" },
     { key: "faceRecognition", icon: <ScanFace className="size-5" />, label: "Reconhecimento facial", desc: "Exigir face ao bater ponto" },
+    { key: "liveness", icon: <Eye className="size-5" />, label: "Prova de vida", desc: "Exigir piscar (anti-fraude com foto)" },
     { key: "whatsapp", icon: <WhatsAppIcon className="size-5" />, label: "Notificações WhatsApp", desc: "Avisar o gestor a cada registro" },
     { key: "biometrics", icon: <Fingerprint className="size-5" />, label: "Biometria", desc: "Desbloqueio por digital" },
     { key: "hoursBank", icon: <Hourglass className="size-5" />, label: "Banco de horas", desc: "Calcular saldo automaticamente" },

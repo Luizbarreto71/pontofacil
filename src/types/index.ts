@@ -73,6 +73,7 @@ export interface AppSettings {
   darkMode: boolean;
   language: "pt-BR" | "en-US" | "es-ES";
   faceRecognition: boolean;
+  liveness: boolean;
   whatsapp: boolean;
   biometrics: boolean;
   hoursBank: boolean;
@@ -82,6 +83,7 @@ export const defaultSettings: AppSettings = {
   darkMode: false,
   language: "pt-BR",
   faceRecognition: true,
+  liveness: true,
   whatsapp: true,
   biometrics: true,
   hoursBank: true,

@@ -103,6 +103,31 @@ export async function hasFace(input: HTMLVideoElement): Promise<boolean> {
   return !!det;
 }
 
+type Pt = { x: number; y: number };
+const dist = (a: Pt, b: Pt) => Math.hypot(a.x - b.x, a.y - b.y);
+
+/** Eye Aspect Ratio: razão altura/largura do olho (cai bruscamente ao piscar). */
+function ear(eye: Pt[]): number {
+  if (eye.length < 6) return 1;
+  return (dist(eye[1], eye[5]) + dist(eye[2], eye[4])) / (2 * dist(eye[0], eye[3]));
+}
+
+/**
+ * Detecta o rosto + landmarks e devolve o EAR médio dos dois olhos.
+ * Usado para a prova de vida (liveness) por piscada. Mais leve que o descritor.
+ */
+export async function detectForLiveness(
+  input: HTMLVideoElement
+): Promise<{ ear: number } | null> {
+  const api = await ensureLib();
+  const options = new api.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.4 });
+  const res = await api.detectSingleFace(input, options).withFaceLandmarks();
+  if (!res) return null;
+  const left = res.landmarks.getLeftEye() as Pt[];
+  const right = res.landmarks.getRightEye() as Pt[];
+  return { ear: (ear(left) + ear(right)) / 2 };
+}
+
 export function euclidean(a: Float32Array, b: Float32Array): number {
   let sum = 0;
   for (let i = 0; i < a.length; i++) {
