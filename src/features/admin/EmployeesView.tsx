@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  UserPlus, Search, ScanFace, Trash2, Copy, Check, Mail, KeyRound, Loader2, Clock,
+  UserPlus, Search, ScanFace, Trash2, Copy, Check, Mail, KeyRound, Loader2, Clock, Pencil,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -80,6 +80,49 @@ export function EmployeesView() {
       toast({ variant: "error", title: "Erro ao criar", description: e instanceof Error ? e.message : "" });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const [editing, setEditing] = useState<EmployeeRow | null>(null);
+  const [editForm, setEditForm] = useState({ nome: "", cargo: "", horaEntrada: "08:00", horaSaida: "18:00" });
+  const [editSaving, setEditSaving] = useState(false);
+
+  const openEdit = (emp: EmployeeRow) => {
+    setEditForm({
+      nome: emp.nome,
+      cargo: emp.cargo ?? "",
+      horaEntrada: emp.hora_entrada ?? "08:00",
+      horaSaida: emp.hora_saida ?? "18:00",
+    });
+    setEditing(emp);
+  };
+
+  const saveEdit = async () => {
+    if (!editing) return;
+    if (!editForm.nome) {
+      toast({ variant: "warning", title: "Informe o nome" });
+      return;
+    }
+    if (editForm.horaSaida <= editForm.horaEntrada) {
+      toast({ variant: "warning", title: "Horário inválido", description: "A saída deve ser após a entrada." });
+      return;
+    }
+    setEditSaving(true);
+    try {
+      await employeeService.update(editing.id, editForm);
+      setList((l) =>
+        l.map((x) =>
+          x.id === editing.id
+            ? { ...x, nome: editForm.nome, cargo: editForm.cargo, hora_entrada: editForm.horaEntrada, hora_saida: editForm.horaSaida }
+            : x
+        )
+      );
+      toast({ variant: "success", title: "Funcionário atualizado" });
+      setEditing(null);
+    } catch (e) {
+      toast({ variant: "error", title: "Erro ao salvar", description: e instanceof Error ? e.message : "" });
+    } finally {
+      setEditSaving(false);
     }
   };
 
@@ -162,10 +205,18 @@ export function EmployeesView() {
                 <span className="hidden w-16 text-right font-mono text-[13px] tabular-nums text-muted-foreground sm:block">
                   {e.lastPunch ?? "--:--"}
                 </span>
+                <button
+                  onClick={() => openEdit(e)}
+                  className="rounded-lg p-2 text-muted-foreground transition hover:bg-primary/10 hover:text-primary"
+                  title="Editar"
+                >
+                  <Pencil className="size-4" />
+                </button>
                 {e.role === "funcionario" && (
                   <button
                     onClick={() => removeEmp(e)}
                     className="rounded-lg p-2 text-muted-foreground transition hover:bg-danger/10 hover:text-danger"
+                    title="Remover"
                   >
                     <Trash2 className="size-4" />
                   </button>
@@ -231,6 +282,39 @@ export function EmployeesView() {
               </Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Editar funcionário */}
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar funcionário</DialogTitle>
+            <DialogDescription>Ajuste o nome, cargo e a jornada de {editing?.nome}.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>Nome completo</Label>
+              <Input value={editForm.nome} onChange={(e) => setEditForm({ ...editForm, nome: e.target.value })} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Cargo</Label>
+              <Input value={editForm.cargo} onChange={(e) => setEditForm({ ...editForm, cargo: e.target.value })} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-1.5"><Clock className="size-3.5" /> Entrada</Label>
+                <Input type="time" value={editForm.horaEntrada} onChange={(e) => setEditForm({ ...editForm, horaEntrada: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-1.5"><Clock className="size-3.5" /> Saída</Label>
+                <Input type="time" value={editForm.horaSaida} onChange={(e) => setEditForm({ ...editForm, horaSaida: e.target.value })} />
+              </div>
+            </div>
+            <Button className="w-full" onClick={saveEdit} disabled={editSaving}>
+              {editSaving ? <><Loader2 className="size-4 animate-spin" /> Salvando…</> : <><Check className="size-[18px] " /> Salvar alterações</>}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

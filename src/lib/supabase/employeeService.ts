@@ -122,6 +122,23 @@ export const employeeService = {
     };
   },
 
+  async update(
+    funcionarioId: string,
+    fields: { nome: string; cargo: string; horaEntrada: string; horaSaida: string }
+  ): Promise<void> {
+    if (!supabase) return;
+    const { error } = await supabase
+      .from("usuarios")
+      .update({
+        nome: fields.nome,
+        cargo: fields.cargo,
+        hora_entrada: fields.horaEntrada,
+        hora_saida: fields.horaSaida,
+      })
+      .eq("id", funcionarioId);
+    if (error) throw new Error(error.message);
+  },
+
   async remove(funcionarioId: string): Promise<void> {
     if (!supabase) return;
     const { error } = await supabase.from("usuarios").delete().eq("id", funcionarioId);
