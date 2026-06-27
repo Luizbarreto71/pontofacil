@@ -26,7 +26,10 @@ import {
 import { Page } from "@/components/layout/Page";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/toast";
-import { initials } from "@/lib/utils";
+import { reportService, formatSaldo } from "@/lib/supabase/reportService";
+import { formatHoursLabel, initials } from "@/lib/utils";
+import { useEffect } from "react";
+import { Hourglass, TrendingUp, TrendingDown } from "lucide-react";
 
 export function ProfileScreen() {
   const navigate = useNavigate();
@@ -36,6 +39,13 @@ export function ProfileScreen() {
   const [pw, setPw] = useState("");
   const [pw2, setPw2] = useState("");
   const [saving, setSaving] = useState(false);
+  const [bank, setBank] = useState<{ saldoMin: number; trab: number; dias: number } | null>(null);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const month = new Date().toISOString().slice(0, 7);
+    reportService.myBalance(user.id, month).then((b) => setBank(b));
+  }, [user?.id]);
 
   const savePassword = async () => {
     if (pw.length < 6) {
@@ -97,7 +107,30 @@ export function ProfileScreen() {
         {user?.company && <p className="text-[13px] text-muted-foreground">{user.company}</p>}
       </motion.div>
 
-      <div className="mt-8 space-y-3">
+      {/* Banco de horas do mês */}
+      {bank && (
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mt-6">
+          <Card className="flex items-center gap-4 p-4">
+            <div className={`flex size-12 items-center justify-center rounded-xl ${bank.saldoMin >= 0 ? "bg-success/12" : "bg-danger/12"}`}>
+              <Hourglass className={`size-6 ${bank.saldoMin >= 0 ? "text-success" : "text-danger"}`} />
+            </div>
+            <div className="flex-1">
+              <p className="text-[12px] font-medium text-muted-foreground">Banco de horas · este mês</p>
+              <p className={`flex items-center gap-1.5 text-2xl font-extrabold tabular-nums ${bank.saldoMin >= 0 ? "text-success" : "text-danger"}`}>
+                {bank.saldoMin >= 0 ? <TrendingUp className="size-5" /> : <TrendingDown className="size-5" />}
+                {formatSaldo(bank.saldoMin)}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-[12px] text-muted-foreground">Trabalhadas</p>
+              <p className="text-[15px] font-bold tabular-nums">{formatHoursLabel(bank.trab)}</p>
+              <p className="text-[11px] text-muted-foreground">{bank.dias} dias</p>
+            </div>
+          </Card>
+        </motion.div>
+      )}
+
+      <div className="mt-6 space-y-3">
         {user?.isAdmin && (
           <Card className="p-0">
             <button

@@ -6,6 +6,10 @@ import {
   Clock,
   ArrowUpRight,
   Users as UsersIcon,
+  Users,
+  UserCheck,
+  UserX,
+  AlertTriangle,
 } from "lucide-react";
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -89,10 +93,10 @@ export function DashboardView() {
 
   const kpis = stats
     ? [
-        { label: "Funcionários", value: empCount, sub: "Ativos", tone: "text-foreground", trend: null },
-        { label: "Presentes", value: stats.presentes, sub: pct(stats.presentes, empCount), tone: "text-success", trend: { up: true } },
-        { label: "Atrasados", value: stats.atrasados, sub: pct(stats.atrasados, empCount), tone: "text-warning", trend: { up: false } },
-        { label: "Ausentes", value: stats.ausentes, sub: pct(stats.ausentes, empCount), tone: "text-danger", trend: { up: false } },
+        { label: "Funcionários", value: empCount, sub: "Ativos", tone: "text-foreground", icon: Users, iconBg: "bg-primary/10 text-primary", trend: null },
+        { label: "Presentes", value: stats.presentes, sub: pct(stats.presentes, empCount), tone: "text-success", icon: UserCheck, iconBg: "bg-success/12 text-success", trend: { up: true } },
+        { label: "Atrasados", value: stats.atrasados, sub: pct(stats.atrasados, empCount), tone: "text-warning", icon: AlertTriangle, iconBg: "bg-warning/15 text-warning", trend: { up: false } },
+        { label: "Ausentes", value: stats.ausentes, sub: pct(stats.ausentes, empCount), tone: "text-danger", icon: UserX, iconBg: "bg-danger/12 text-danger", trend: { up: false } },
       ]
     : [];
 
@@ -117,10 +121,12 @@ export function DashboardView() {
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
-            className="rounded-xl border border-border bg-card p-4 shadow-card"
+            className="rounded-2xl border border-border bg-card p-4 shadow-card transition-shadow hover:shadow-float/50"
           >
             <div className="flex items-center justify-between">
-              <p className="text-[13px] font-medium text-muted-foreground">{k.label}</p>
+              <span className={cn("flex size-9 items-center justify-center rounded-xl", k.iconBg)}>
+                <k.icon className="size-5" />
+              </span>
               {k.trend &&
                 (k.trend.up ? (
                   <TrendingUp className="size-4 text-success" />
@@ -128,8 +134,9 @@ export function DashboardView() {
                   <TrendingDown className="size-4 text-muted-foreground" />
                 ))}
             </div>
-            <p className={cn("mt-2 text-3xl font-extrabold tabular-nums", k.tone)}>{k.value}</p>
-            <p className="mt-1 text-[12px] text-muted-foreground">{k.sub}</p>
+            <p className={cn("mt-3 text-3xl font-extrabold tabular-nums", k.tone)}>{k.value}</p>
+            <p className="mt-0.5 text-[13px] font-medium text-muted-foreground">{k.label}</p>
+            <p className="text-[12px] text-muted-foreground/80">{k.sub}</p>
           </motion.div>
         ))}
 

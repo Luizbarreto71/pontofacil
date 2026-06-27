@@ -53,8 +53,9 @@ export function LeafletLiveMap({ className, markers, fallback }: LeafletLiveMapP
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
     layerRef.current = L.layerGroup().addTo(map);
     mapRef.current = map;
-    setTimeout(() => map.invalidateSize(), 100);
+    const t = setTimeout(() => mapRef.current?.invalidateSize(), 100);
     return () => {
+      clearTimeout(t);
       map.remove();
       mapRef.current = null;
       layerRef.current = null;

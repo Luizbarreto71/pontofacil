@@ -53,6 +53,35 @@ export const notificationsService = {
     });
   },
 
+  /** Avisa o gestor que um funcionário está atrasado (1x por dia por funcionário). */
+  async createLate(args: {
+    empresaId?: string;
+    funcionarioId: string;
+    nome: string;
+    horaEntrada: string;
+  }): Promise<void> {
+    if (!supabase || !args.empresaId) return;
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    // evita duplicar o alerta no mesmo dia
+    const { data: existing } = await supabase
+      .from("notificacoes")
+      .select("id")
+      .eq("funcionario_id", args.funcionarioId)
+      .eq("tipo", "atraso")
+      .gte("created_at", start.toISOString())
+      .limit(1);
+    if (existing && existing.length) return;
+
+    await supabase.from("notificacoes").insert({
+      empresa_id: args.empresaId,
+      funcionario_id: args.funcionarioId,
+      mensagem: `${args.nome} está atrasado (entrada prevista às ${args.horaEntrada}).`,
+      tipo: "atraso",
+      canal: "sistema",
+    });
+  },
+
   subscribe(empresaId: string, cb: () => void): () => void {
     if (!supabase) return () => {};
     const client = supabase;

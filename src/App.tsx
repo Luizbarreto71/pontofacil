@@ -2,6 +2,7 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { useAuth } from "./contexts/AuthContext";
 import { MobileShell } from "./components/layout/MobileShell";
+import { ErrorBoundary } from "./components/layout/ErrorBoundary";
 
 import { SplashScreen } from "./features/splash/SplashScreen";
 import { LoginScreen } from "./features/auth/LoginScreen";
@@ -18,6 +19,7 @@ import { DashboardView } from "./features/admin/DashboardView";
 import { EmployeesView } from "./features/admin/EmployeesView";
 import { CompanyConfigView } from "./features/admin/CompanyConfigView";
 import { NotificationsView } from "./features/admin/NotificationsView";
+import { ReportsView } from "./features/admin/ReportsView";
 import { PlaceholderView } from "./features/admin/PlaceholderView";
 
 function RequireAuth({ children, adminOnly }: { children: React.ReactNode; adminOnly?: boolean }) {
@@ -33,6 +35,7 @@ export default function App() {
   const section = location.pathname.split("/")[1] || "root";
 
   return (
+    <ErrorBoundary>
     <AnimatePresence mode="wait">
       <Routes location={location} key={section}>
         <Route path="/" element={<SplashScreen />} />
@@ -57,12 +60,13 @@ export default function App() {
           <Route path="funcionarios" element={<EmployeesView />} />
           <Route path="notificacoes" element={<NotificationsView />} />
           <Route path="configuracoes" element={<CompanyConfigView />} />
-          <Route path="relatorios" element={<PlaceholderView title="Relatórios" />} />
+          <Route path="relatorios" element={<ReportsView />} />
           <Route path="registros" element={<PlaceholderView title="Registros" />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AnimatePresence>
+    </ErrorBoundary>
   );
 }

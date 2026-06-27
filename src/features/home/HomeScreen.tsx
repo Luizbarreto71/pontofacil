@@ -21,6 +21,7 @@ import { MapView } from "@/components/shared/MapView";
 import { Page } from "@/components/layout/Page";
 import { GpsStatusInline } from "@/components/shared/GpsStatus";
 import { useToast } from "@/components/ui/toast";
+import { notificationsService } from "@/lib/supabase/notificationsService";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePunch } from "@/contexts/PunchContext";
 import { useCompany } from "@/contexts/CompanyContext";
@@ -76,6 +77,15 @@ export function HomeScreen() {
           title: "Você está atrasado",
           description: `Sua entrada era às ${horaEntrada}. Bata seu ponto o quanto antes.`,
         });
+        // avisa o gestor (painel + realtime)
+        if (user?.id) {
+          notificationsService.createLate({
+            empresaId: user.empresaId,
+            funcionarioId: user.id,
+            nome: user.name,
+            horaEntrada,
+          });
+        }
         // notificação do sistema (se permitido)
         try {
           if ("Notification" in window) {
@@ -95,7 +105,8 @@ export function HomeScreen() {
     } else {
       lateNotified.current = false; // reseta ao bater ponto ou sair do estado de atraso
     }
-  }, [shift.kind, horaEntrada, toast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shift.kind, horaEntrada]);
 
   return (
     <Page>

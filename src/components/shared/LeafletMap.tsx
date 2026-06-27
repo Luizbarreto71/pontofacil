@@ -63,9 +63,10 @@ export function LeafletMap({
       });
     }
     // garante render correto após o layout
-    setTimeout(() => map.invalidateSize(), 100);
+    const t = setTimeout(() => mapRef.current?.invalidateSize(), 100);
 
     return () => {
+      clearTimeout(t);
       map.remove();
       mapRef.current = null;
       markerRef.current = null;
