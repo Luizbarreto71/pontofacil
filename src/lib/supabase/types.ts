@@ -44,6 +44,8 @@ export interface Database {
           ativo: boolean;
           hora_entrada: string;
           hora_saida: string;
+          intervalo_min: number;
+          dias_trabalho: number[];
           created_at: string;
         };
         Insert: {
@@ -57,6 +59,8 @@ export interface Database {
           ativo?: boolean;
           hora_entrada?: string;
           hora_saida?: string;
+          intervalo_min?: number;
+          dias_trabalho?: number[];
         };
         Update: Partial<Database["public"]["Tables"]["usuarios"]["Insert"]>;
       };

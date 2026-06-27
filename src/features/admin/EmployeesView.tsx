@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { WeekdayPicker, summarizeDays } from "@/components/shared/WeekdayPicker";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
@@ -34,6 +35,7 @@ export function EmployeesView() {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
 
+  const WORKDAYS_DEFAULT = [1, 2, 3, 4, 5, 6]; // Seg–Sáb
   const [form, setForm] = useState({
     nome: "",
     email: "",
@@ -41,6 +43,8 @@ export function EmployeesView() {
     senha: "",
     horaEntrada: "08:00",
     horaSaida: "18:00",
+    intervaloMin: 60,
+    diasTrabalho: WORKDAYS_DEFAULT,
   });
   const [saving, setSaving] = useState(false);
   const [created, setCreated] = useState<{ email: string; senha: string } | null>(null);
@@ -55,7 +59,10 @@ export function EmployeesView() {
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [empresaId]);
 
   const openNew = () => {
-    setForm({ nome: "", email: "", cargo: "", senha: genPassword(), horaEntrada: "08:00", horaSaida: "18:00" });
+    setForm({
+      nome: "", email: "", cargo: "", senha: genPassword(),
+      horaEntrada: "08:00", horaSaida: "18:00", intervaloMin: 60, diasTrabalho: WORKDAYS_DEFAULT,
+    });
     setCreated(null);
     setOpen(true);
   };
@@ -68,6 +75,10 @@ export function EmployeesView() {
     }
     if (form.horaSaida <= form.horaEntrada) {
       toast({ variant: "warning", title: "Horário inválido", description: "A saída deve ser após a entrada." });
+      return;
+    }
+    if (form.diasTrabalho.length === 0) {
+      toast({ variant: "warning", title: "Selecione ao menos um dia de trabalho" });
       return;
     }
     setSaving(true);
@@ -84,7 +95,9 @@ export function EmployeesView() {
   };
 
   const [editing, setEditing] = useState<EmployeeRow | null>(null);
-  const [editForm, setEditForm] = useState({ nome: "", cargo: "", horaEntrada: "08:00", horaSaida: "18:00" });
+  const [editForm, setEditForm] = useState({
+    nome: "", cargo: "", horaEntrada: "08:00", horaSaida: "18:00", intervaloMin: 60, diasTrabalho: [1, 2, 3, 4, 5, 6],
+  });
   const [editSaving, setEditSaving] = useState(false);
 
   const openEdit = (emp: EmployeeRow) => {
@@ -93,6 +106,8 @@ export function EmployeesView() {
       cargo: emp.cargo ?? "",
       horaEntrada: emp.hora_entrada ?? "08:00",
       horaSaida: emp.hora_saida ?? "18:00",
+      intervaloMin: emp.intervalo_min ?? 60,
+      diasTrabalho: emp.dias_trabalho ?? [1, 2, 3, 4, 5, 6],
     });
     setEditing(emp);
   };
@@ -107,13 +122,25 @@ export function EmployeesView() {
       toast({ variant: "warning", title: "Horário inválido", description: "A saída deve ser após a entrada." });
       return;
     }
+    if (editForm.diasTrabalho.length === 0) {
+      toast({ variant: "warning", title: "Selecione ao menos um dia de trabalho" });
+      return;
+    }
     setEditSaving(true);
     try {
       await employeeService.update(editing.id, editForm);
       setList((l) =>
         l.map((x) =>
           x.id === editing.id
-            ? { ...x, nome: editForm.nome, cargo: editForm.cargo, hora_entrada: editForm.horaEntrada, hora_saida: editForm.horaSaida }
+            ? {
+                ...x,
+                nome: editForm.nome,
+                cargo: editForm.cargo,
+                hora_entrada: editForm.horaEntrada,
+                hora_saida: editForm.horaSaida,
+                intervalo_min: editForm.intervaloMin,
+                dias_trabalho: editForm.diasTrabalho,
+              }
             : x
         )
       );
@@ -195,6 +222,8 @@ export function EmployeesView() {
                   </p>
                   <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
                     <Clock className="size-3" /> {e.hora_entrada ?? "08:00"}–{e.hora_saida ?? "18:00"}
+                    {" · "}{summarizeDays(e.dias_trabalho ?? [1, 2, 3, 4, 5, 6])}
+                    {" · "}{e.intervalo_min ?? 60}min
                   </p>
                 </div>
                 {e.faceEnrolled ? (
@@ -277,6 +306,22 @@ export function EmployeesView() {
                   <Input type="time" value={form.horaSaida} onChange={(e) => setForm({ ...form, horaSaida: e.target.value })} />
                 </div>
               </div>
+              <div className="space-y-1.5">
+                <Label>Intervalo (min)</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  step={15}
+                  value={form.intervaloMin}
+                  onChange={(e) => setForm({ ...form, intervaloMin: Number(e.target.value) })}
+                />
+                <p className="text-[11px] text-muted-foreground">Padrão: 60 min (1 hora de intervalo).</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Dias de trabalho</Label>
+                <WeekdayPicker value={form.diasTrabalho} onChange={(d) => setForm({ ...form, diasTrabalho: d })} />
+                <p className="text-[11px] text-muted-foreground">Padrão: Segunda a Sábado (folga no domingo).</p>
+              </div>
               <Button className="w-full" onClick={submit} disabled={saving}>
                 {saving ? <><Loader2 className="size-4 animate-spin" /> Criando…</> : <><UserPlus className="size-[18px]" /> Criar acesso</>}
               </Button>
@@ -310,6 +355,14 @@ export function EmployeesView() {
                 <Label className="flex items-center gap-1.5"><Clock className="size-3.5" /> Saída</Label>
                 <Input type="time" value={editForm.horaSaida} onChange={(e) => setEditForm({ ...editForm, horaSaida: e.target.value })} />
               </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Intervalo (min)</Label>
+              <Input type="number" min={0} step={15} value={editForm.intervaloMin} onChange={(e) => setEditForm({ ...editForm, intervaloMin: Number(e.target.value) })} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Dias de trabalho</Label>
+              <WeekdayPicker value={editForm.diasTrabalho} onChange={(d) => setEditForm({ ...editForm, diasTrabalho: d })} />
             </div>
             <Button className="w-full" onClick={saveEdit} disabled={editSaving}>
               {editSaving ? <><Loader2 className="size-4 animate-spin" /> Salvando…</> : <><Check className="size-[18px] " /> Salvar alterações</>}

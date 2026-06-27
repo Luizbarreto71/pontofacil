@@ -6,6 +6,7 @@ export function toMinutes(hhmm: string): number {
 }
 
 export type ShiftStatus =
+  | { kind: "folga" } // dia de folga (não trabalha hoje)
   | { kind: "before"; minutesTo: number } // antes da entrada
   | { kind: "ontime" } // dentro da tolerância, ainda não bateu
   | { kind: "late"; minutesLate: number } // atrasado e sem entrada registrada
@@ -15,13 +16,16 @@ export type ShiftStatus =
 /**
  * Calcula a situação atual do funcionário em relação à jornada.
  * @param clockedIn  já registrou a entrada hoje?
+ * @param workDays   dias de trabalho (0=Dom..6=Sáb); padrão Seg–Sáb
  */
 export function shiftStatus(
   now: Date,
   horaEntrada: string,
   horaSaida: string,
-  clockedIn: boolean
+  clockedIn: boolean,
+  workDays: number[] = [1, 2, 3, 4, 5, 6]
 ): ShiftStatus {
+  if (!clockedIn && !workDays.includes(now.getDay())) return { kind: "folga" };
   const cur = now.getHours() * 60 + now.getMinutes();
   const entrada = toMinutes(horaEntrada);
   const saida = toMinutes(horaSaida);

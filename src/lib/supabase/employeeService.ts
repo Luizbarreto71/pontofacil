@@ -15,6 +15,8 @@ export interface EmployeeInput {
   empresaId: string;
   horaEntrada: string; // "08:00"
   horaSaida: string; // "18:00"
+  intervaloMin: number; // 60
+  diasTrabalho: number[]; // [1..6] (0=Dom)
 }
 
 export interface EmployeeRow extends UsuarioRow {
@@ -100,6 +102,8 @@ export const employeeService = {
       role: "funcionario",
       hora_entrada: input.horaEntrada,
       hora_saida: input.horaSaida,
+      intervalo_min: input.intervaloMin,
+      dias_trabalho: input.diasTrabalho,
     });
     await temp.auth.signOut();
 
@@ -116,6 +120,8 @@ export const employeeService = {
       ativo: true,
       hora_entrada: input.horaEntrada,
       hora_saida: input.horaSaida,
+      intervalo_min: input.intervaloMin,
+      dias_trabalho: input.diasTrabalho,
       created_at: new Date().toISOString(),
       faceEnrolled: false,
       lastPunch: null,
@@ -124,7 +130,14 @@ export const employeeService = {
 
   async update(
     funcionarioId: string,
-    fields: { nome: string; cargo: string; horaEntrada: string; horaSaida: string }
+    fields: {
+      nome: string;
+      cargo: string;
+      horaEntrada: string;
+      horaSaida: string;
+      intervaloMin: number;
+      diasTrabalho: number[];
+    }
   ): Promise<void> {
     if (!supabase) return;
     const { error } = await supabase
@@ -134,6 +147,8 @@ export const employeeService = {
         cargo: fields.cargo,
         hora_entrada: fields.horaEntrada,
         hora_saida: fields.horaSaida,
+        intervalo_min: fields.intervaloMin,
+        dias_trabalho: fields.diasTrabalho,
       })
       .eq("id", funcionarioId);
     if (error) throw new Error(error.message);

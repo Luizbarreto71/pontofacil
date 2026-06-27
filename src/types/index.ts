@@ -25,6 +25,8 @@ export interface User {
   empresaId?: string;
   horaEntrada?: string; // "08:00"
   horaSaida?: string; // "18:00"
+  intervaloMin?: number;
+  diasTrabalho?: number[]; // [0..6], 0=Dom
 }
 
 export type NotificationChannel = "whatsapp" | "system" | "email";

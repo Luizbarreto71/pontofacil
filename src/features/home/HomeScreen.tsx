@@ -57,7 +57,7 @@ export function HomeScreen() {
   const horaEntrada = user?.horaEntrada ?? "08:00";
   const horaSaida = user?.horaSaida ?? "18:00";
   const clockedIn = journey.find((s) => s.type === "entrada")?.time != null;
-  const shift = shiftStatus(now, horaEntrada, horaSaida, clockedIn);
+  const shift = shiftStatus(now, horaEntrada, horaSaida, clockedIn, user?.diasTrabalho);
   const clockStr = now.toLocaleTimeString("pt-BR", {
     hour: "2-digit",
     minute: "2-digit",
@@ -147,6 +147,11 @@ export function HomeScreen() {
                 <>
                   <AlertTriangle className="size-4" />
                   Você está atrasado {formatDuration(shift.minutesLate)} — bata seu ponto!
+                </>
+              ) : shift.kind === "folga" ? (
+                <>
+                  <CheckCircle2 className="size-4" />
+                  Hoje é seu dia de folga 🎉
                 </>
               ) : shift.kind === "before" ? (
                 <>

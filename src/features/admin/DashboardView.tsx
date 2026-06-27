@@ -13,7 +13,7 @@ import {
 } from "recharts";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MapView } from "@/components/shared/MapView";
+import { LeafletLiveMap, type LiveMarker } from "@/components/shared/LeafletLiveMap";
 import { WhatsAppIcon } from "@/components/brand/WhatsAppIcon";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRealtimePunches } from "@/hooks/useRealtimePunches";
@@ -58,17 +58,25 @@ export function DashboardView() {
     return punches.filter((p) => p.timestamp >= start.getTime());
   }, [punches]);
 
-  const pins = useMemo(
-    () =>
-      todayPunches.slice(0, 6).map((p, i) => ({
-        id: p.id,
-        x: [22, 58, 78, 40, 65, 33][i % 6],
-        y: [38, 30, 55, 70, 78, 60][i % 6],
+  // marcadores reais: última posição (com lat/lng) de cada funcionário hoje
+  const liveMarkers = useMemo<LiveMarker[]>(() => {
+    const seen = new Set<string>();
+    const out: LiveMarker[] = [];
+    for (const p of todayPunches) {
+      if (p.lat == null || p.lng == null || seen.has(p.employeeId)) continue;
+      seen.add(p.employeeId);
+      out.push({
+        id: p.employeeId,
+        lat: p.lat,
+        lng: p.lng,
+        label: p.employeeName,
+        sublabel: `${punchMeta[p.type].label} · ${p.time} · ${p.location}`,
         avatarUrl: p.avatarUrl,
-        color: p.gpsConfirmed ? "#2563EB" : "#F59E0B",
-      })),
-    [todayPunches]
-  );
+        color: p.gpsConfirmed ? "#16A34A" : "#F59E0B",
+      });
+    }
+    return out;
+  }, [todayPunches]);
 
   const donut = stats
     ? [
@@ -151,7 +159,16 @@ export function DashboardView() {
               <span className="size-2 animate-pulse rounded-full bg-success" /> Ao vivo
             </span>
           </div>
-          <MapView className="h-[300px] w-full" pins={pins} label="Equipe" />
+          {liveMarkers.length > 0 ? (
+            <LeafletLiveMap className="h-[300px] w-full border border-border" markers={liveMarkers} />
+          ) : (
+            <div className="flex h-[300px] w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-secondary/30 text-center">
+              <UsersIcon className="size-8 text-muted-foreground/50" />
+              <p className="text-[13px] text-muted-foreground">
+                Nenhum registro com GPS hoje.<br />As posições aparecem aqui em tempo real.
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="rounded-xl border border-border bg-card p-5 shadow-card">
