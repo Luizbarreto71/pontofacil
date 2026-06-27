@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { type Coords, distanceMeters, type WorkLocation } from "@/lib/geo";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { type Coords, distanceMeters, ipGeolocate, type WorkLocation } from "@/lib/geo";
 
 export type GeoStatus =
   | "idle"
@@ -13,12 +13,18 @@ export type GeoStatus =
 export interface GeoState {
   status: GeoStatus;
   coords: Coords | null;
-  accuracy: number | null; // metros
-  distance: number | null; // metros até o local de trabalho
+  accuracy: number | null;
+  distance: number | null;
   withinRadius: boolean;
   radius: number;
   error: string | null;
   noWorkLocation: boolean;
+  /** posição obtida por IP (cidade) — não valida a área do ponto */
+  approximate: boolean;
+}
+
+export interface GeoResult extends GeoState {
+  retry: () => void;
 }
 
 function isSecure(): boolean {
@@ -28,14 +34,9 @@ function isSecure(): boolean {
   return h === "localhost" || h === "127.0.0.1" || h === "::1";
 }
 
-/**
- * GPS REAL via navigator.geolocation.
- * - Exige contexto seguro (HTTPS ou localhost) — em HTTP de IP local o navegador bloqueia.
- * - Estratégia tolerante: alta precisão primeiro; em timeout/indisponível, cai para
- *   baixa precisão (ainda permite validar a área de forma aproximada).
- * O local de trabalho vem da empresa (Supabase), em `work`.
- */
-export function useGeolocation(work: WorkLocation | null, active = true): GeoState {
+const isMac = typeof navigator !== "undefined" && /Mac/i.test(navigator.platform);
+
+export function useGeolocation(work: WorkLocation | null, active = true): GeoResult {
   const [state, setState] = useState<GeoState>({
     status: "idle",
     coords: null,
@@ -45,9 +46,12 @@ export function useGeolocation(work: WorkLocation | null, active = true): GeoSta
     radius: work?.radius ?? 150,
     error: null,
     noWorkLocation: !work,
+    approximate: false,
   });
+  const [attempt, setAttempt] = useState(0);
   const watchId = useRef<number | null>(null);
-  const triedLowAccuracy = useRef(false);
+  const triedLow = useRef(false);
+  const retry = useCallback(() => setAttempt((a) => a + 1), []);
 
   useEffect(() => {
     if (!active) return;
@@ -65,10 +69,12 @@ export function useGeolocation(work: WorkLocation | null, active = true): GeoSta
       return;
     }
 
-    setState((s) => ({ ...s, status: "locating", noWorkLocation: !work, error: null }));
-    triedLowAccuracy.current = false;
+    setState((s) => ({ ...s, status: "locating", noWorkLocation: !work, error: null, approximate: false }));
+    triedLow.current = false;
+    let cancelled = false;
 
     const onSuccess = (pos: GeolocationPosition) => {
+      if (cancelled) return;
       const coords: Coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
       const distance = work ? distanceMeters(coords, work) : null;
       setState({
@@ -80,7 +86,29 @@ export function useGeolocation(work: WorkLocation | null, active = true): GeoSta
         radius: work?.radius ?? 150,
         error: null,
         noWorkLocation: !work,
+        approximate: false,
       });
+    };
+
+    const fallbackToIp = async (reason: string) => {
+      const c = await ipGeolocate();
+      if (cancelled) return;
+      if (c) {
+        const distance = work ? distanceMeters(c, work) : null;
+        setState({
+          status: "granted",
+          coords: c,
+          accuracy: 5000,
+          distance,
+          withinRadius: false, // IP é coarse: nunca valida a área
+          radius: work?.radius ?? 150,
+          error: "Localização aproximada (por IP). Para validar a área e bater ponto, use o GPS no celular.",
+          noWorkLocation: !work,
+          approximate: true,
+        });
+      } else {
+        setState((s) => ({ ...s, status: "error", error: reason }));
+      }
     };
 
     const startWatch = (highAccuracy: boolean) => {
@@ -93,33 +121,35 @@ export function useGeolocation(work: WorkLocation | null, active = true): GeoSta
     };
 
     const onError = (err: GeolocationPositionError) => {
+      if (cancelled) return;
       if (err.code === err.PERMISSION_DENIED) {
         setState((s) => ({
           ...s,
           status: "denied",
-          error: "Permissão de localização negada. Habilite o acesso à localização para este site.",
+          error: "Permissão de localização negada. Toque no cadeado da barra de endereço e permita a localização.",
         }));
         return;
       }
-      // TIMEOUT ou POSITION_UNAVAILABLE → tenta uma vez em baixa precisão
-      if (!triedLowAccuracy.current) {
-        triedLowAccuracy.current = true;
+      if (!triedLow.current) {
+        triedLow.current = true;
         startWatch(false);
         return;
       }
-      setState((s) => ({
-        ...s,
-        status: "error",
-        error: "Não foi possível obter a localização. Verifique o GPS/sinal e tente novamente.",
-      }));
+      // último recurso: aproxima por IP
+      void fallbackToIp(
+        isMac
+          ? "Localização indisponível. No Mac, ative em Ajustes → Privacidade e Segurança → Serviços de Localização e permita o navegador."
+          : "Não foi possível obter a localização. Verifique o GPS/sinal e tente novamente."
+      );
     };
 
     startWatch(true);
 
     return () => {
+      cancelled = true;
       if (watchId.current !== null) navigator.geolocation.clearWatch(watchId.current);
     };
-  }, [active, work?.lat, work?.lng, work?.radius]);
+  }, [active, work?.lat, work?.lng, work?.radius, attempt]);
 
-  return state;
+  return { ...state, retry };
 }

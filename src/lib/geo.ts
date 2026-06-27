@@ -62,6 +62,24 @@ export async function reverseGeocode(c: Coords): Promise<string> {
   }
 }
 
+/**
+ * Localização aproximada por IP (cidade) — usada só como fallback quando o GPS
+ * do navegador falha (ex.: Serviços de Localização desligados no desktop).
+ * HTTPS + CORS, sem chave. NÃO serve para validar a área do ponto (é coarse).
+ */
+export async function ipGeolocate(): Promise<Coords | null> {
+  try {
+    const res = await fetch("https://ipwho.is/");
+    const d = await res.json();
+    if (d && d.success !== false && typeof d.latitude === "number") {
+      return { lat: d.latitude, lng: d.longitude };
+    }
+  } catch {
+    /* ignora */
+  }
+  return null;
+}
+
 export interface GeocodeResult extends Coords {
   endereco: string;
 }

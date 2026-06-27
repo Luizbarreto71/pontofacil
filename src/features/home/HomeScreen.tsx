@@ -7,6 +7,7 @@ import {
   ChevronRight,
   ScanFace,
   MapPinOff,
+  RefreshCw,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -113,6 +114,14 @@ export function HomeScreen() {
                       }`
                     : workLocation?.label ?? "Localização via GPS"}
                 </p>
+                {(geo.status === "error" || geo.status === "denied" || geo.approximate) && (
+                  <button
+                    onClick={geo.retry}
+                    className="mt-1.5 inline-flex items-center gap-1 text-[12px] font-semibold text-primary"
+                  >
+                    <RefreshCw className="size-3.5" /> Tentar novamente
+                  </button>
+                )}
               </div>
               <MapView className="h-16 w-16 shrink-0" showSelf label="" />
             </div>

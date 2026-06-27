@@ -11,6 +11,8 @@ export function gpsLabel(geo: GeoState): { text: string; tone: "ok" | "warn" | "
     return { text: "GPS exige HTTPS", tone: "bad" };
   if (geo.status === "unsupported" || geo.status === "error")
     return { text: "GPS indisponível", tone: "bad" };
+  if (geo.approximate)
+    return { text: "Localização aproximada (IP)", tone: "warn" };
   if (geo.noWorkLocation)
     return { text: "Local de trabalho não configurado", tone: "warn" };
   if (geo.withinRadius)
