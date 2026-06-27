@@ -87,6 +87,17 @@
     font-feature-settings: "cv11", "ss01";
     font-variation-settings: normal;
     overscroll-behavior-y: none;
+    /* profundidade sutil no fundo (estilo SaaS moderno) */
+    background-image:
+      radial-gradient(60rem 60rem at 110% -10%, hsl(var(--primary) / 0.06), transparent 60%),
+      radial-gradient(50rem 50rem at -10% 0%, hsl(var(--primary) / 0.05), transparent 55%);
+    background-attachment: fixed;
+  }
+
+  .dark body {
+    background-image:
+      radial-gradient(60rem 60rem at 110% -10%, hsl(var(--primary) / 0.14), transparent 60%),
+      radial-gradient(50rem 50rem at -10% 0%, hsl(217 91% 60% / 0.08), transparent 55%);
   }
 
   /* Tipografia grande, espaçada, "respirando" */

@@ -7,8 +7,8 @@ import { BottomNav } from "./BottomNav";
  */
 export function MobileShell() {
   return (
-    <div className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col bg-background">
-      <main className="flex-1 pb-24">
+    <div className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col">
+      <main className="flex-1 pb-28">
         <Outlet />
       </main>
       <BottomNav />

@@ -52,16 +52,18 @@ export default {
         },
       },
       borderRadius: {
+        "2xl": "22px",
         xl: "18px",
         lg: "14px",
         md: "10px",
         sm: "8px",
       },
       boxShadow: {
-        soft: "0 2px 8px -2px rgba(16, 24, 40, 0.06), 0 4px 16px -4px rgba(16, 24, 40, 0.08)",
-        card: "0 1px 3px rgba(16, 24, 40, 0.04), 0 8px 24px -8px rgba(16, 24, 40, 0.10)",
-        float: "0 12px 32px -8px rgba(37, 99, 235, 0.35)",
+        soft: "0 1px 2px rgba(16, 24, 40, 0.04), 0 4px 14px -4px rgba(16, 24, 40, 0.07)",
+        card: "0 1px 2px rgba(16, 24, 40, 0.04), 0 10px 30px -12px rgba(16, 24, 40, 0.12)",
+        float: "0 10px 24px -6px rgba(37, 99, 235, 0.28), 0 4px 8px -4px rgba(37, 99, 235, 0.20)",
         glow: "0 0 0 4px rgba(37, 99, 235, 0.12)",
+        "inner-line": "inset 0 1px 0 0 rgba(255,255,255,0.06)",
       },
       keyframes: {
         "fade-in": {

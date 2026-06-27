@@ -159,7 +159,7 @@ export function DashboardView() {
 
       {/* Mapa + Últimos registros */}
       <div className="grid gap-5 lg:grid-cols-3">
-        <div className="rounded-xl border border-border bg-card p-5 shadow-card lg:col-span-2">
+        <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-card lg:col-span-2">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-semibold">Mapa em tempo real</h2>
             <span className="flex items-center gap-1.5 text-[12px] font-medium text-success">
@@ -178,7 +178,7 @@ export function DashboardView() {
           )}
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+        <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-card">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-semibold">Últimos registros</h2>
             {todayPunches.length > 0 && (
@@ -233,7 +233,7 @@ export function DashboardView() {
 
       {/* Gráficos */}
       <div className="grid gap-5 lg:grid-cols-3">
-        <div className="rounded-xl border border-border bg-card p-5 shadow-card lg:col-span-2">
+        <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-card lg:col-span-2">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-semibold">Horas trabalhadas (semanal)</h2>
             <span className="flex items-center gap-1 text-[12px] font-semibold text-primary">
@@ -252,7 +252,7 @@ export function DashboardView() {
           </ResponsiveContainer>
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+        <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-card">
           <h2 className="mb-2 font-semibold">Distribuição de status</h2>
           {donutTotal === 0 ? (
             <p className="py-16 text-center text-[13px] text-muted-foreground">Sem dados hoje.</p>

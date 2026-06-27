@@ -190,7 +190,7 @@ export function EmployeesView() {
         </Button>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-card">
+      <div className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-card">
         {loading ? (
           <div className="space-y-2 p-4">
             {[0, 1, 2].map((i) => <Skeleton key={i} className="h-14 w-full" />)}

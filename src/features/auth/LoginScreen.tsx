@@ -63,9 +63,12 @@ export function LoginScreen() {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background">
-      {/* topo com leve degradê da marca */}
-      <div className="bg-gradient-to-b from-primary/10 to-transparent px-6 pb-2 pt-[calc(env(safe-area-inset-top)+3rem)]">
+    <div className="relative flex min-h-dvh flex-col overflow-hidden bg-background">
+      {/* brilhos da marca ao fundo */}
+      <div className="pointer-events-none absolute -right-24 -top-32 size-72 rounded-full bg-primary/15 blur-3xl" />
+      <div className="pointer-events-none absolute -left-20 top-24 size-60 rounded-full bg-primary/10 blur-3xl" />
+
+      <div className="relative px-6 pb-2 pt-[calc(env(safe-area-inset-top)+3rem)]">
         <Logo size="md" />
       </div>
 
@@ -73,9 +76,9 @@ export function LoginScreen() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-        className="flex flex-1 flex-col px-6 pt-8"
+        className="relative flex flex-1 flex-col px-6 pt-8"
       >
-        <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
+        <h1 className="text-[34px] font-extrabold leading-tight tracking-tight text-foreground">
           Bem-vindo!
         </h1>
         <p className="mt-1.5 text-[15px] text-muted-foreground">

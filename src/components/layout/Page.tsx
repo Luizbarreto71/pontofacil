@@ -30,13 +30,13 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, subtitle, action, className }: PageHeaderProps) {
   return (
-    <header className={cn("mb-5 flex items-start justify-between gap-3", className)}>
+    <header className={cn("mb-6 flex items-start justify-between gap-3", className)}>
       <div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
+        <h1 className="text-[27px] font-extrabold leading-tight tracking-tight text-foreground">
           {title}
         </h1>
         {subtitle && (
-          <p className="mt-0.5 text-sm text-muted-foreground">{subtitle}</p>
+          <p className="mt-1 text-[15px] text-muted-foreground">{subtitle}</p>
         )}
       </div>
       {action}

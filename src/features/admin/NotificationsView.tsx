@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { LogIn, Coffee, Undo2, LogOut, BellOff } from "lucide-react";
+import { LogIn, Coffee, Undo2, LogOut, BellOff, AlertTriangle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WhatsAppIcon } from "@/components/brand/WhatsAppIcon";
 import { useAuth } from "@/contexts/AuthContext";
@@ -54,17 +54,19 @@ export function NotificationsView() {
         </div>
       ) : (
         items.map((n, i) => {
+          const isLate = n.tipo === "atraso";
           const meta = n.tipo in punchMeta ? punchMeta[n.tipo as PunchType] : null;
+          const bg = isLate ? "#F59E0B" : meta?.hex ?? "#2563EB";
           return (
             <motion.div
               key={n.id}
               initial={{ opacity: 0, x: -16 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.04 }}
-              className="flex items-start gap-3.5 rounded-xl border border-border bg-card p-4 shadow-card"
+              className="flex items-start gap-3.5 rounded-2xl border border-border/60 bg-card p-4 shadow-card"
             >
-              <div className="flex size-11 shrink-0 items-center justify-center rounded-xl text-white" style={{ background: meta?.hex ?? "#2563EB" }}>
-                {meta ? icon[n.tipo] : <WhatsAppIcon className="size-5" />}
+              <div className="flex size-11 shrink-0 items-center justify-center rounded-xl text-white" style={{ background: bg }}>
+                {isLate ? <AlertTriangle className="size-5" /> : meta ? icon[n.tipo] : <WhatsAppIcon className="size-5" />}
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-2">
@@ -72,7 +74,11 @@ export function NotificationsView() {
                   <span className="shrink-0 text-[12px] text-muted-foreground">{timeAgo(n.created_at)}</span>
                 </div>
                 <p className="mt-1 flex items-center gap-1.5 text-[12px] text-muted-foreground">
-                  <WhatsAppIcon className="size-3.5 text-[#25D366]" /> Via WhatsApp
+                  {isLate ? (
+                    <><AlertTriangle className="size-3.5 text-warning" /> Alerta de atraso</>
+                  ) : (
+                    <><WhatsAppIcon className="size-3.5 text-[#25D366]" /> Via WhatsApp</>
+                  )}
                 </p>
               </div>
             </motion.div>
