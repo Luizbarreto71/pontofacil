@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -19,6 +20,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MapView } from "@/components/shared/MapView";
 import { Page } from "@/components/layout/Page";
 import { GpsStatusInline } from "@/components/shared/GpsStatus";
+import { useToast } from "@/components/ui/toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePunch } from "@/contexts/PunchContext";
 import { useCompany } from "@/contexts/CompanyContext";
@@ -61,6 +63,39 @@ export function HomeScreen() {
     minute: "2-digit",
     second: "2-digit",
   });
+
+  // Notifica uma vez quando o funcionário fica atrasado (e ainda não bateu entrada)
+  const { toast } = useToast();
+  const lateNotified = useRef(false);
+  useEffect(() => {
+    if (shift.kind === "late") {
+      if (!lateNotified.current) {
+        lateNotified.current = true;
+        toast({
+          variant: "warning",
+          title: "Você está atrasado",
+          description: `Sua entrada era às ${horaEntrada}. Bata seu ponto o quanto antes.`,
+        });
+        // notificação do sistema (se permitido)
+        try {
+          if ("Notification" in window) {
+            if (Notification.permission === "granted") {
+              new Notification("Ponto Fácil · Atraso", {
+                body: `Sua entrada era às ${horaEntrada}. Registre seu ponto.`,
+                icon: "/favicon.svg",
+              });
+            } else if (Notification.permission === "default") {
+              Notification.requestPermission();
+            }
+          }
+        } catch {
+          /* ignora ambientes sem Notification */
+        }
+      }
+    } else {
+      lateNotified.current = false; // reseta ao bater ponto ou sair do estado de atraso
+    }
+  }, [shift.kind, horaEntrada, toast]);
 
   return (
     <Page>
