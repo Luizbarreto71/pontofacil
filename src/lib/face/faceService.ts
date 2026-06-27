@@ -26,16 +26,42 @@ async function ensureLib() {
   return faceapi;
 }
 
-/** Carrega os modelos (idempotente). */
+/** Carrega os modelos + backend GPU + warm-up (idempotente). */
 export async function loadModels(): Promise<void> {
   if (loadingPromise) return loadingPromise;
   loadingPromise = (async () => {
     const api = await ensureLib();
+
+    // Backend GPU (WebGL) — dezenas de vezes mais rápido que CPU/WASM.
+    try {
+      const tf = (api as unknown as { tf: any }).tf;
+      if (tf?.getBackend?.() !== "webgl") {
+        await tf.setBackend("webgl");
+      }
+      await tf.ready();
+    } catch {
+      /* fallback automático para o backend disponível */
+    }
+
     await Promise.all([
       api.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
       api.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
       api.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
     ]);
+
+    // Warm-up: compila os shaders do detector num frame em branco
+    // para que a 1ª detecção real já seja rápida.
+    try {
+      const c = document.createElement("canvas");
+      c.width = 224;
+      c.height = 224;
+      await api.detectSingleFace(
+        c,
+        new api.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.4 })
+      );
+    } catch {
+      /* ignora */
+    }
   })();
   return loadingPromise;
 }
@@ -53,8 +79,9 @@ export async function getDescriptor(
   input: HTMLVideoElement | HTMLImageElement
 ): Promise<{ descriptor: Float32Array; score: number } | null> {
   const api = await ensureLib();
+  // inputSize menor = detecção bem mais rápida (selfie já preenche o quadro)
   const options = new api.TinyFaceDetectorOptions({
-    inputSize: 320,
+    inputSize: 224,
     scoreThreshold: 0.4,
   });
   const result = await api

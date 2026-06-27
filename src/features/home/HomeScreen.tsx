@@ -29,6 +29,7 @@ import { useGeolocation } from "@/hooks/useGeolocation";
 import { useNow } from "@/hooks/useNow";
 import { punchMeta } from "@/lib/punch-meta";
 import { faceStore } from "@/lib/face/faceStore";
+import { loadModels } from "@/lib/face/faceService";
 import { shiftStatus, formatDuration } from "@/lib/schedule";
 import { initials } from "@/lib/utils";
 
@@ -64,6 +65,11 @@ export function HomeScreen() {
     minute: "2-digit",
     second: "2-digit",
   });
+
+  // Pré-carrega os modelos de biometria (warm-up) para o "Bater Ponto" ser instantâneo
+  useEffect(() => {
+    loadModels().catch(() => {});
+  }, []);
 
   // Notifica uma vez quando o funcionário fica atrasado (e ainda não bateu entrada)
   const { toast } = useToast();

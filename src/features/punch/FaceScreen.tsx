@@ -146,13 +146,13 @@ export function FaceScreen() {
       // tenta capturar um descritor (algumas tentativas)
       let captured: Float32Array | null = null;
       let score = 0;
-      for (let i = 0; i < 12 && !captured; i++) {
+      for (let i = 0; i < 20 && !captured; i++) {
         const r = await getDescriptor(video);
         if (r) {
           captured = r.descriptor;
           score = r.score;
         } else {
-          await sleep(350);
+          await sleep(150);
         }
       }
 
