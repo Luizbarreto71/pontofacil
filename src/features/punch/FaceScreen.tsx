@@ -45,6 +45,7 @@ export function FaceScreen() {
 
   const uid = user?.id ?? "u1";
   const [hasCamera, setHasCamera] = useState(false);
+  const [cameraError, setCameraError] = useState(false);
   const [phase, setPhase] = useState<Phase>("init");
   const [statusMsg, setStatusMsg] = useState("Carregando biometria…");
   const [isEnrolling, setIsEnrolling] = useState(false);
@@ -66,23 +67,36 @@ export function FaceScreen() {
 
   // 1) Câmera real
   useEffect(() => {
+    let cancelled = false;
     (async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "user", width: 480, height: 480 },
+          video: { facingMode: "user", width: { ideal: 480 }, height: { ideal: 480 } },
           audio: false,
         });
-        streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          setHasCamera(true);
+        if (cancelled) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
         }
+        streamRef.current = stream;
+        setHasCamera(true); // não depende do videoRef (que só monta depois)
       } catch {
         setHasCamera(false);
+        setCameraError(true);
       }
     })();
-    return () => streamRef.current?.getTracks().forEach((t) => t.stop());
+    return () => {
+      cancelled = true;
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+    };
   }, []);
+
+  // anexa o stream ao <video> assim que ele estiver montado
+  useEffect(() => {
+    if (hasCamera && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+    }
+  }, [hasCamera]);
 
   // 2) GPS → atualiza checks de localização/área e busca endereço
   useEffect(() => {
@@ -326,18 +340,18 @@ export function FaceScreen() {
                 : "border-white dark:border-slate-700"
             }`}
           >
-            {hasCamera ? (
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className="h-full w-full scale-x-[-1] object-cover"
-              />
-            ) : (
-              <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-secondary text-muted-foreground">
+            {/* o <video> é sempre montado para que o ref exista antes de anexar o stream */}
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className={`h-full w-full scale-x-[-1] object-cover ${hasCamera ? "" : "opacity-0"}`}
+            />
+            {cameraError && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-secondary text-muted-foreground">
                 <ScanFace className="size-12" />
-                <span className="px-4 text-center text-[12px]">Câmera indisponível</span>
+                <span className="px-4 text-center text-[12px]">Câmera indisponível — permita o acesso</span>
               </div>
             )}
 
