@@ -23,6 +23,8 @@ export interface User {
   avatarUrl?: string;
   isAdmin?: boolean;
   empresaId?: string;
+  horaEntrada?: string; // "08:00"
+  horaSaida?: string; // "18:00"
 }
 
 export type NotificationChannel = "whatsapp" | "system" | "email";

@@ -8,6 +8,9 @@ import {
   ScanFace,
   MapPinOff,
   RefreshCw,
+  AlertTriangle,
+  LogIn,
+  CheckCircle2,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,8 +23,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePunch } from "@/contexts/PunchContext";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useGeolocation } from "@/hooks/useGeolocation";
+import { useNow } from "@/hooks/useNow";
 import { punchMeta } from "@/lib/punch-meta";
 import { faceStore } from "@/lib/face/faceStore";
+import { shiftStatus, formatDuration } from "@/lib/schedule";
 import { initials } from "@/lib/utils";
 
 const container = {
@@ -41,10 +46,21 @@ export function HomeScreen() {
   const { journey, nextStep, loading } = usePunch();
   const { workLocation, needsLocation } = useCompany();
   const geo = useGeolocation(workLocation, true);
+  const now = useNow();
   const navigate = useNavigate();
   const firstName = user?.name.split(" ")[0] ?? "";
   const gpsOk = geo.withinRadius;
   const needsFace = !!user && !faceStore.hasEnrolled(user.id);
+
+  const horaEntrada = user?.horaEntrada ?? "08:00";
+  const horaSaida = user?.horaSaida ?? "18:00";
+  const clockedIn = journey.find((s) => s.type === "entrada")?.time != null;
+  const shift = shiftStatus(now, horaEntrada, horaSaida, clockedIn);
+  const clockStr = now.toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
 
   return (
     <Page>
@@ -64,6 +80,63 @@ export function HomeScreen() {
             </Avatar>
           </button>
         </motion.header>
+
+        {/* Relógio ao vivo + jornada */}
+        <motion.div variants={item}>
+          <Card
+            className={`relative overflow-hidden p-5 text-white shadow-float ${
+              shift.kind === "late"
+                ? "bg-gradient-to-br from-danger to-rose-700"
+                : "bg-gradient-to-br from-primary to-primary-dark"
+            }`}
+          >
+            <div className="pointer-events-none absolute -right-6 -top-8 size-32 rounded-full bg-white/10 blur-2xl" />
+            <div className="flex items-end justify-between">
+              <div>
+                <p className="text-xs font-medium text-white/70">Horário atual</p>
+                <p className="font-mono text-4xl font-extrabold tabular-nums tracking-tight">
+                  {clockStr}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs font-medium text-white/70">Sua jornada</p>
+                <p className="text-[15px] font-bold tabular-nums">
+                  {horaEntrada} – {horaSaida}
+                </p>
+              </div>
+            </div>
+
+            {/* status da jornada */}
+            <div className="mt-4 flex items-center gap-2 rounded-xl bg-white/15 px-3 py-2 text-[13px] font-semibold backdrop-blur-sm">
+              {shift.kind === "late" ? (
+                <>
+                  <AlertTriangle className="size-4" />
+                  Você está atrasado {formatDuration(shift.minutesLate)} — bata seu ponto!
+                </>
+              ) : shift.kind === "before" ? (
+                <>
+                  <Clock className="size-4" />
+                  Faltam {formatDuration(shift.minutesTo)} para sua entrada
+                </>
+              ) : shift.kind === "ontime" ? (
+                <>
+                  <LogIn className="size-4" />
+                  Está na hora de bater o ponto de entrada
+                </>
+              ) : shift.kind === "working" ? (
+                <>
+                  <CheckCircle2 className="size-4" />
+                  Em expediente · entrada às {journey.find((s) => s.type === "entrada")?.time}
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="size-4" />
+                  Fora do expediente
+                </>
+              )}
+            </div>
+          </Card>
+        </motion.div>
 
         {/* Banner de cadastro facial pendente */}
         {needsFace && (

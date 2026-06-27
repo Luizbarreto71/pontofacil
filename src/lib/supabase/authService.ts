@@ -20,7 +20,7 @@ async function loadProfile(userId: string, fallbackEmail: string): Promise<User>
   const client = requireClient();
   const { data } = await client
     .from("usuarios")
-    .select("id, nome, email, cargo, role, avatar_url, empresa_id, empresas(nome)")
+    .select("id, nome, email, cargo, role, avatar_url, empresa_id, hora_entrada, hora_saida, empresas(nome)")
     .eq("id", userId)
     .maybeSingle();
 
@@ -46,6 +46,8 @@ async function loadProfile(userId: string, fallbackEmail: string): Promise<User>
     avatarUrl: data.avatar_url ?? undefined,
     isAdmin: ["admin", "gestor", "rh", "supervisor"].includes(data.role),
     empresaId: data.empresa_id ?? undefined,
+    horaEntrada: data.hora_entrada ?? undefined,
+    horaSaida: data.hora_saida ?? undefined,
   };
 }
 
