@@ -129,11 +129,16 @@ export function AdminLayout() {
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", stiffness: 380, damping: 38 }}
-              className="fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-slate-900 text-slate-300 md:hidden"
+              className="fixed inset-y-0 left-0 z-50 flex w-72 flex-col overflow-y-auto bg-slate-900 text-slate-300 md:hidden"
+              style={{
+                paddingTop: "env(safe-area-inset-top)",
+                paddingBottom: "env(safe-area-inset-bottom)",
+              }}
             >
               <button
                 onClick={() => setMobileOpen(false)}
-                className="absolute right-3 top-4 rounded-lg p-1.5 text-slate-400 hover:bg-slate-800"
+                className="absolute right-3 z-10 rounded-lg p-1.5 text-slate-400 hover:bg-slate-800"
+                style={{ top: "calc(env(safe-area-inset-top) + 0.75rem)" }}
               >
                 <X className="size-5" />
               </button>
@@ -145,7 +150,10 @@ export function AdminLayout() {
 
       {/* Conteúdo */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="glass sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b border-border/70 px-4 md:px-6">
+        <header
+          className="glass sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b border-border/70 px-4 md:px-6"
+          style={{ paddingTop: "env(safe-area-inset-top)", height: "calc(4rem + env(safe-area-inset-top))" }}
+        >
           <div className="flex items-center gap-3">
             {/* mobile: abre drawer · desktop: colapsa */}
             <button
