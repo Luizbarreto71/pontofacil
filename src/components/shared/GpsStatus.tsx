@@ -7,6 +7,8 @@ export function gpsLabel(geo: GeoState): { text: string; tone: "ok" | "warn" | "
     return { text: "Localizando via GPS…", tone: "load" };
   if (geo.status === "denied")
     return { text: "Permissão de GPS negada", tone: "bad" };
+  if (geo.status === "insecure")
+    return { text: "GPS exige HTTPS", tone: "bad" };
   if (geo.status === "unsupported" || geo.status === "error")
     return { text: "GPS indisponível", tone: "bad" };
   if (geo.noWorkLocation)

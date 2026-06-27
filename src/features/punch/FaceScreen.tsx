@@ -91,7 +91,12 @@ export function FaceScreen() {
       if (geo.coords && !address) {
         reverseGeocode(geo.coords).then(setAddress);
       }
-    } else if (geo.status === "denied" || geo.status === "error" || geo.status === "unsupported") {
+    } else if (
+      geo.status === "denied" ||
+      geo.status === "error" ||
+      geo.status === "insecure" ||
+      geo.status === "unsupported"
+    ) {
       setChecks((c) => ({ ...c, gps: "fail", area: "fail" }));
     }
   }, [geo.status, geo.withinRadius, geo.coords, address]);

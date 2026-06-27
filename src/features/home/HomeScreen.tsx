@@ -102,8 +102,10 @@ export function HomeScreen() {
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-medium text-muted-foreground">Status do dia</p>
                 <GpsStatusInline geo={geo} />
-                <p className="mt-0.5 truncate text-[12px] text-muted-foreground">
-                  {needsLocation
+                <p className="mt-0.5 text-[12px] text-muted-foreground line-clamp-2">
+                  {geo.error
+                    ? geo.error
+                    : needsLocation
                     ? "Aguardando o gestor configurar o local"
                     : geo.accuracy
                     ? `Precisão ${Math.round(geo.accuracy)} m${
